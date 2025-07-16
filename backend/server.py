@@ -1132,38 +1132,13 @@ async def handle_admin_callback(chat_id: int, user: User, data: str):
         
         active_subs = await db.users.count_documents({"subscription_expires": {"$gt": datetime.utcnow()}})
         
-        # Статистика по типам платежей
-        crypto_payments = await db.payments.aggregate([
-            {"$match": {"payment_type": "crypto", "status": "completed"}},
-            {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
-        ]).to_list(1)
-        
-        stars_payments = await db.payments.aggregate([
-            {"$match": {"payment_type": "stars", "status": "completed"}},
-            {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
-        ]).to_list(1)
-        
-        admin_payments = await db.payments.aggregate([
-            {"$match": {"payment_type": "admin", "status": "completed"}},
-            {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
-        ]).to_list(1)
-        
         stats_text = f"📊 *СТАТИСТИКА СЕРВИСА*\n\n"
         stats_text += f"👥 Пользователей: {total_users}\n"
         stats_text += f"🔍 Поисков: {total_searches}\n"
-        stats_text += f"⭐ Активных подписок: {active_subs}\n\n"
+        stats_text += f"⭐ Активных подписок: {active_subs}\n"
         
-        stats_text += f"💰 *ПРИБЫЛЬ (ТОЛЬКО ПОПОЛНЕНИЯ):*\n"
         revenue = total_revenue[0]['total'] if total_revenue else 0
-        stats_text += f"💳 Общая прибыль: {revenue:.2f} ₽\n"
-        
-        crypto_rev = crypto_payments[0]['total'] if crypto_payments else 0
-        stars_rev = stars_payments[0]['total'] if stars_payments else 0
-        admin_rev = admin_payments[0]['total'] if admin_payments else 0
-        
-        stats_text += f"🤖 Криптобот: {crypto_rev:.2f} ₽\n"
-        stats_text += f"⭐ Звезды: {stars_rev:.2f} ₽\n"
-        stats_text += f"👑 Админ: {admin_rev:.2f} ₽"
+        stats_text += f"💰 Прибыль (пополнения): {revenue:.2f} ₽"
         
         await send_telegram_message(chat_id, stats_text, reply_markup=create_admin_menu())
     
